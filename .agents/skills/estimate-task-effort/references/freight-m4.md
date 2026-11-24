@@ -6,10 +6,6 @@ DCSA 的 Shipment Journey 将订舱请求、资料补正和承运人确认分开
 
 补料（SI）和运输单据（TD）有各自的提交、更新和审核环节。在 DCSA 的订舱与提单联合实施流程中，关联订舱状态影响 SI 提交的先后。遇到草稿多次修改，按需要人工复核的版本估算。使用 M4 客户流程时以本分支实现和本票的交接条件核对适用性。[DCSA 联合实施指南](https://reference.dcsa.org/content/standards/guidelines/implementation-guides/implementing-booking-and-bill-of-lading)
 
-GAO 的 Best Practice 4 要求给工期估算保留历史类比、假设和依据，并结合具体资源与工作日历。用于个人估时时，先算本人动手投入，再推算日历上的完成时间。本 Skill 用中位数汇总可比样本，这是本工具的统计选择。[GAO Schedule Assessment Guide，最佳实践 4，印刷页 63–66](https://www.gao.gov/assets/gao-16-89g.pdf)
-
-美国能源部的项目管理实践文章将上述方法用于具体活动。拆到可以看见工作交接的程度，再由实际负责人核对类似活动的经验和作业条件。[DOE Project Management News，2022 年 11 月，第 2–4 页](https://www.energy.gov/sites/default/files/2022-11/PM%20Newsletter%20November%202022.pdf)
-
 ## M4 的实际工作边界
 
 以下是从 M4 客户分支的代码得到的估算口径。版本或客户发生变化时，沿相应的页面操作、后端处理和回执或验收入口复核。在 Agent 工程对应的本地资料目录中，`.local-data/estimate-task-effort-20261124/M4工时估算评估.md` 留存了本次核查版本和定位信息。
@@ -27,3 +23,9 @@ GAO 的 Best Practice 4 要求给工期估算保留历史类比、假设和依�
 先画出这次交付实际经过的环节，用责任人和交付物去重。若“整票处理”的实绩已经包括复核、提交和一次回执核对，直接按整票类比，或改用分项实绩。只有确认是新增的工作才额外相加。跨角色分别报工时。跨日的船司回传、业务审批、测试环境及用户验收影响交期，给出最早可继续的条件。
 
 软件研发估算应写明本次交付边界。原有报表新增一个已存在的数据栏位，与新增持久化字段、回填旧数据并按角色校验导出，涉及不同的实现与回归。先读目标分支的取数、展示和测试代码，再用同一人完成过的相似改动估时。只有现状代码时，给出可确认的工作分解，以及补齐总量最需要的实绩或假设。
+
+## 工时估算的方法来源
+
+GAO 的 Best Practice 4 要求给工期估算保留历史类比、假设和依据，并结合具体资源与工作日历。用于个人估时时，先算本人动手投入，再推算日历上的完成时间。本 Skill 用中位数汇总可比样本，这是本工具的统计选择。[GAO Schedule Assessment Guide，最佳实践 4，印刷页 63–66](https://www.gao.gov/assets/gao-16-89g.pdf)
+
+美国能源部的项目管理实践文章将上述方法用于具体活动。拆到可以看见工作交接的程度，再由实际负责人核对类似活动的经验和作业条件。[DOE Project Management News，2022 年 11 月，第 2–4 页](https://www.energy.gov/sites/default/files/2022-11/PM%20Newsletter%20November%202022.pdf)
