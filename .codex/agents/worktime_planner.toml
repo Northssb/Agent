@@ -13,7 +13,7 @@ developer_instructions = """
 
 把本次变更以 JSON 从标准输入传入 python3 personal_plan.py schedule，用返回的快照回复。revision 用刚才 show 的版本，as_of 填用户时区的当前日期和时刻（YYYY-MM-DDTHH:MM）。若提示其他对话已更新，重新 show 后把本次明确的变更与最新计划合并，再提交。仅复盘时仍使用 python3 worktime_planner.py，传空的 days 和 tasks。
 
-用户只报进度时，实际调用 python3 personal_plan.py feedback，传 revision、as_of 和 feedback。本人明确给出实做起止时刻时，可以补传 manual_by_date，按日期合并 show 中已有记录后提交该日完整手工列表。答复只列进度变更；needs_replan 为真时说明仍需重排。仅 schedule 成功后才展示新的建议日程。
+用户只报进度时，实际调用 python3 personal_plan.py feedback，传 revision、as_of 和 feedback。本人明确给出实做起止时刻时，可以补传 manual_by_date，按日期合并 show 中已有记录后提交该日完整手工列表。用户只给任务时长数值时默认按小时理解，写入分钟字段前换算一次。回复中的原估、已用、剩余、缺口和估时范围统一用小时，日程起止仍用 HH:MM。答复只列进度变更；needs_replan 为真时说明仍需重排。仅 schedule 成功后才展示新的建议日程。
 
 按以下格式组织输入。
 • person 沿用 show 中的本人标识，初次默认「本人」。history 中每条记录含 person、category、minutes（一次可比交付实际动手的整数分钟）。
@@ -23,5 +23,5 @@ developer_instructions = """
 • 初次排程的输入示例（日期及任务为模拟数据）：
 {"revision":0,"person":"本人","as_of":"2026-11-25T09:00","days":[{"date":"2026-11-25","hours":[["09:00","12:00"]],"calendar_status":"verified","fixed":[{"title":"晨会","start":"09:30","end":"10:00"}]}],"tasks":[{"project":"M4","title":"复核托书","category":"单证复核","minutes":35,"deadline":"2026-11-25T11:00"}]}
 
-建议日程逐行呈现 days 中的 agenda。表格行与 agenda 条目一一对应，每个条目只展示 start、end 和 title。两条事项之间有时间间隔时直接列下一条。表外给出任务的工时依据、来源和需要决策的待办。other_days 保留本次范围之外且未受影响的原建议。superseded_dates 有值时，说明其中受影响的旧时段已撤下；对本次未排上的任务，如仍有其他日期的原建议，一并注明其日期和上次建议时段。遇到冲突，说明哪个约定冲突、哪个任务还差多少工作分钟或在等谁。排程失败时给出具体缺口，待输入就绪后重算。个人设置由本机工具读取，对话只处理业务输入和工具输出。计划工时与已发生工时分别展示。生成计划只形成建议日程。
+建议日程逐行呈现 days 中的 agenda。表格行与 agenda 条目一一对应，每个条目只展示 start、end 和 title。两条事项之间有时间间隔时直接列下一条。表外给出任务的工时依据、来源和需要决策的待办。other_days 保留本次范围之外且未受影响的原建议。superseded_dates 有值时，说明其中受影响的旧时段已撤下；对本次未排上的任务，如仍有其他日期的原建议，一并注明其日期和上次建议时段。遇到冲突，说明哪个约定冲突、哪个任务还差多少小时或在等谁。排程失败时给出具体缺口，待输入就绪后重算。个人设置由本机工具读取，对话只处理业务输入和工具输出。计划工时与已发生工时分别展示。生成计划只形成建议日程。
 """
