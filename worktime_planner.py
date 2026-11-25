@@ -70,10 +70,15 @@ def read_working_hours():
         for pair in hours:
             if not isinstance(pair, list) or len(pair) != 2 or clock_minutes(pair[0]) >= clock_minutes(pair[1]):
                 raise ValueError
-        return {day: hours for day in weekdays}
+        task_buffer = None
+        if "task_buffer" in config:
+            task_buffer = Fraction(str(config["task_buffer"]))
+            if task_buffer < 0:
+                raise ValueError
+        return {day: hours for day in weekdays}, task_buffer
     except FileNotFoundError:
-        return None
-    except (OSError, KeyError, TypeError, ValueError) as error:
+        return None, None
+    except (OSError, KeyError, TypeError, ValueError, ZeroDivisionError) as error:
         raise ValueError("个人工作时段配置无效，请检查 working-hours.json。") from error
 
 
@@ -255,9 +260,12 @@ def plan(data):
     analysis = analyze(data.get("history", []), person)
     raw_days = data.get("days", [])
     days = []
+    task_multiplier = Fraction(1)
     if raw_days:
-        capacity = read_capacity()
-        weekly = read_working_hours()
+        weekly, task_buffer = read_working_hours()
+        capacity = read_capacity() if task_buffer is None else Fraction(1)
+        if task_buffer is not None:
+            task_multiplier += task_buffer
         raw_days = [{**day, "hours": effective_hours(day, weekly)} for day in raw_days]
         days = sorted((Workday(day, capacity) for day in raw_days), key=lambda day: day.date)
         if len({day.date for day in days}) != len(days):
@@ -285,13 +293,17 @@ def plan(data):
             reason = "缺少同类实绩或本次估时"
         else:
             earliest = max([as_of, task.earliest] + [completed[name] for name in task.after])
+            reserved = ceil(needed * task_multiplier)
+            unreserved = reserved
             for day in days:
-                needed, finish = day.place(task, needed, earliest)
-                if needed == 0:
+                unreserved, finish = day.place(task, unreserved, earliest)
+                if unreserved == 0:
                     completed[task.title] = finish
                     break
-            if needed == 0:
+            if unreserved == 0:
                 continue
+            # 跨日共用同一份缓冲，待排工时按已占用的时间还原为实际投入。
+            needed -= (reserved - unreserved) // task_multiplier
             reason = "截止前可用时段不足" if task.deadline < END_OF_CALENDAR else "需要后续可用时段"
         backlog.append(dict(title=task.title, remaining_minutes=needed, reason=reason))
     return dict(person=person, analysis=list(analysis.values()), estimates=estimates,
