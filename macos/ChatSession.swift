@@ -139,6 +139,11 @@ final class ChatSession: ObservableObject {
         process.arguments = ["exec", "--skip-git-repo-check", "--sandbox", "workspace-write", "--add-dir", planDirectory.path,
                              "--cd", project.path, "--config", "shell_environment_policy.set.PYTHONDONTWRITEBYTECODE=\"1\"",
                              "--json"]
+        let calendarTool = project.deletingLastPathComponent().appendingPathComponent("dingtalk_calendar.py")
+        if fs.isExecutableFile(atPath: calendarTool.path) {
+            process.arguments! += ["--config", "mcp_servers.worktime_calendar.command=\(calendarTool.path)",
+                                   "--config", "mcp_servers.worktime_calendar.enabled_tools=[\"my_busy\"]"]
+        }
         if let id = threadID { process.arguments! += ["resume", id.uuidString.lowercased()] }
         process.arguments!.append("-")
         var env = ProcessInfo.processInfo.environment
@@ -161,7 +166,7 @@ final class ChatSession: ObservableObject {
         running = process
         busy = true
         let instruction = """
-        你是用户的个人工时助手。遵循当前工程 AGENTS.md 中的估时、排程和进度反馈流程。仅查看计划时只执行 python3 personal_plan.py show。排程或重排时先遵循项目中钉钉日历读取规则。使用简体中文直接回复，日程用易读的短行展示。本窗口用于帮助用户管理个人工时。
+        你是用户的个人工时助手。遵循当前工程 AGENTS.md 中的估时、排程和进度反馈流程。仅查看计划时只执行 python3 personal_plan.py show。排程或重排时先遵循项目中钉钉日历读取规则，核对本人忙闲时优先调用本窗口提供的 my_busy。使用简体中文直接回复，日程用易读的短行展示。本窗口用于帮助用户管理个人工时。
         """
         let prompt = threadID == nil ? instruction + "\n\n用户消息：\n" + text : text
         let writer = input.fileHandleForWriting

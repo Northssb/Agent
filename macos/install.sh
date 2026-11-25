@@ -59,6 +59,7 @@ fi
     "$project_dir/macos/ChatWindow.swift" "$project_dir/macos/ChatSession.swift" \
     -o "$contents/MacOS/WorktimeChat"
 cp "$project_dir/macos/Worktime.icns" "$contents/Resources/"
+install -m 755 "$project_dir/macos/dingtalk_calendar.py" "$contents/Resources/dingtalk_calendar.py"
 agent="$contents/Resources/Agent"
 mkdir -p "$agent/.codex/agents" "$agent/.agents/skills"
 cp "$project_dir"/{AGENTS.md,personal_plan.py,plan_resume.py,plan_tasks.py,worktime_planner.py} "$agent/"
