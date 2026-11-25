@@ -119,6 +119,7 @@ private struct ChatWindow: View {
                         HStack(spacing: 8) {
                             ProgressView().controlSize(.small)
                             Text("正在回复…").font(.callout).foregroundStyle(.secondary)
+                            Button("停止") { session.stop() }
                         }
                     }
                     Color.clear.frame(height: 1).id("end-of-chat")

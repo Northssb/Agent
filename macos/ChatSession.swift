@@ -81,6 +81,21 @@ final class ChatSession: ObservableObject {
         ask(last.text)
     }
 
+    func stop() {
+        guard let process = running else { return }
+        running = nil
+        busy = false
+        errorMessage = "已停止等待。你可以重试，也可以发送新消息。"
+        let pid = process.processIdentifier
+        guard process.isRunning, pid > 1 else { return }
+        // Foundation 为子进程创建独立进程组时，一并停止该请求启动的工具。
+        if getpgid(pid) == pid && pid != getpgrp() {
+            killpg(pid, SIGKILL)
+        } else {
+            kill(pid, SIGKILL)
+        }
+    }
+
     private func save() throws {
         let fs = FileManager.default
         try fs.createDirectory(at: storageDirectory, withIntermediateDirectories: true,
@@ -106,7 +121,19 @@ final class ChatSession: ObservableObject {
             return
         }
         let process = Process()
-        let input = Pipe(), output = Pipe()
+        let input = Pipe()
+        // CLI 的后代可能继承标准输出。等待 CLI 自身退出，不让管道 EOF 卡住下一次对话。
+        guard let temporary = tmpfile() else {
+            errorMessage = "无法为本次回复创建临时文件，请检查磁盘空间后重试。"
+            return
+        }
+        let descriptor = dup(fileno(temporary))
+        fclose(temporary)
+        guard descriptor >= 0 else {
+            errorMessage = "无法读取本次回复，请重试。"
+            return
+        }
+        let output = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
         process.executableURL = executable
         process.currentDirectoryURL = project
         process.arguments = ["exec", "--skip-git-repo-check", "--sandbox", "workspace-write", "--add-dir", planDirectory.path,
@@ -145,8 +172,9 @@ final class ChatSession: ObservableObject {
         }
         Task {
             let result = await Task.detached(priority: .userInitiated) {
-                await Self.readTurn(output.fileHandleForReading, process: process)
+                await Self.readTurn(output, process: process)
             }.value
+            guard running === process else { return }
             running = nil
             busy = false
             if let id = result.thread { threadID = id }
@@ -166,7 +194,9 @@ final class ChatSession: ObservableObject {
         var thread: UUID?
         var answer = "", detail = ""
         var completed = false
+        process.waitUntilExit()
         do {
+            try stream.seek(toOffset: 0)
             for try await line in stream.bytes.lines {
                 guard let event = (try? JSONSerialization.jsonObject(with: Data(line.utf8))) as? [String: Any]
                 else { continue }
@@ -184,10 +214,7 @@ final class ChatSession: ObservableObject {
                 default: break
                 }
             }
-        } catch {
-            if process.isRunning { process.terminate() }
-        }
-        process.waitUntilExit()
+        } catch { completed = false }
         guard process.terminationStatus == 0, completed,
               !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             let message: String
