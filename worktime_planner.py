@@ -58,6 +58,42 @@ def clock_minutes(value):
     return clock.hour * 60 + clock.minute
 
 
+def read_working_hours():
+    path = Path.home() / ".config" / "personal-worktime-agent" / "working-hours.json"
+    try:
+        config = json.loads(path.read_text(encoding="utf-8"))
+        weekdays, hours = config["weekdays"], config["hours"]
+        if not isinstance(weekdays, list) or any(type(day) is not int or not 1 <= day <= 7 for day in weekdays):
+            raise ValueError
+        if not isinstance(hours, list):
+            raise ValueError
+        for pair in hours:
+            if not isinstance(pair, list) or len(pair) != 2 or clock_minutes(pair[0]) >= clock_minutes(pair[1]):
+                raise ValueError
+        return {day: hours for day in weekdays}
+    except FileNotFoundError:
+        return None
+    except (OSError, KeyError, TypeError, ValueError) as error:
+        raise ValueError("个人工作时段配置无效，请检查 working-hours.json。") from error
+
+
+def effective_hours(day, weekly):
+    if weekly is None:
+        return day["hours"]
+    allowed = weekly.get(date.fromisoformat(day["date"]).isoweekday(), [])
+    if "hours" not in day:
+        return allowed
+    windows = []
+    for start, end in day["hours"]:
+        if clock_minutes(end) <= clock_minutes(start):
+            raise ValueError("同一天的时段终点须晚于起点，跨日时请按日期分段。")
+        for opening, closing in allowed:
+            left, right = max(start, opening), min(end, closing)
+            if left < right:
+                windows.append((left, right))
+    return windows
+
+
 def timestamp(value):
     day, clock = value.split("T")
     return date.fromisoformat(day).toordinal() * DAY_MINUTES + clock_minutes(clock)
@@ -221,6 +257,8 @@ def plan(data):
     days = []
     if raw_days:
         capacity = read_capacity()
+        weekly = read_working_hours()
+        raw_days = [{**day, "hours": effective_hours(day, weekly)} for day in raw_days]
         days = sorted((Workday(day, capacity) for day in raw_days), key=lambda day: day.date)
         if len({day.date for day in days}) != len(days):
             raise ValueError("同一日期请合并成一个工作日。")

@@ -34,7 +34,10 @@ def confirmed_days(requested, manual_by_date):
             manual_by_date[date] = fixed_events(day["manual_fixed"])
         # 钉钉占用取自本次查询，手工约定和实际工作从本机计划恢复。
         fixed = fixed_events(day.get("fixed", []) + manual_by_date.get(date, []))
-        days.append(dict(date=date, hours=day["hours"], fixed=fixed))
+        requested_day = dict(date=date, fixed=fixed)
+        if "hours" in day:
+            requested_day["hours"] = day["hours"]
+        days.append(requested_day)
     return days
 
 
