@@ -40,9 +40,10 @@ private struct ChatWindow: View {
         VStack(spacing: 0) {
             if session.messages.isEmpty && !session.busy && session.errorMessage == nil {
                 VStack(spacing: 18) {
-                    Image(systemName: "clock.badge.checkmark")
-                        .font(.system(size: 34, weight: .medium))
-                        .foregroundStyle(.teal)
+                    Image(nsImage: NSApplication.shared.applicationIconImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 72, height: 72)
                         .accessibilityHidden(true)
                     Text("今天想安排什么工作？")
                         .font(.title2.weight(.medium))
